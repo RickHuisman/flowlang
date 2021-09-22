@@ -2,11 +2,17 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "compiler.h"
 
 int main() {
   char* source = "print 10;";
 
-  Node ast = parse(source);
+  Node ast = newPrint(newNumber(10.0));
+  ObjFunction *function = compile(&ast);
+  printf("foo");
+
+//  Node ast = parse(source);
+//  compile(&ast);
 
 //  initLexer(source);
 //

@@ -40,8 +40,7 @@ static void error(const char *message) {
 
 static void advance() {
   parser.previous = parser.current;
-
-  for (;;) {
+for (;;) {
     parser.current = readToken();
     if (parser.current.type != TOKEN_ERROR) break;
     error("Unexpected EOF.");
@@ -69,10 +68,7 @@ static void consume(TokenType type, const char *message) {
 
 static Node number() {
   double value = strtod(parser.previous.start, NULL);
-  Node node;
-  node.type = NODE_NUMBER;
-  node.number = value;
-  return node;
+  return newNumber(value);
 }
 
 static Node expression();
@@ -90,12 +86,7 @@ static Node unary() {
   }
 
   Node expr = expression();
-
-  Node node;
-  node.type = NODE_UNARY;
-  node.unaryOp = op;
-  node.left = &expr;
-  return node;
+  return newUnary(op, expr);
 }
 
 static Node binary(Node left) {
@@ -113,12 +104,7 @@ static Node binary(Node left) {
   ParseRule *rule = getRule(op_token);
   Node right = parsePrecedence((Precedence)(rule->precedence + 1));
 
-  Node node;
-  node.type = NODE_BINARY;
-  node.left = &left;
-  node.binaryOp = op;
-  node.right = &right;
-  return node;
+  return newBinary(left, op, right);
 }
 
 ParseRule rules[] = {
@@ -181,11 +167,7 @@ static Node expressionStatement() {
 
 static Node declaration() {
   if (match(TOKEN_PRINT)) {
-    Node node;
-    node.type = NODE_PRINT;
-    Node expr = expressionStatement();
-    node.left = &expr;
-    return node;
+    return newPrint(expressionStatement());
   }
 
   /* if (match(TOKEN_LET)) { */

@@ -50,4 +50,9 @@ struct Node {
   double number; // TODO: Make literal.
 };
 
+Node newUnary(UnaryOperator op, Node left);
+Node newBinary(Node left, BinaryOperator op, Node right);
+Node newPrint(Node left);
+Node newNumber(double value);
+
 #endif
