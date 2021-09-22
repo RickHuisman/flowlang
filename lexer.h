@@ -26,6 +26,9 @@ typedef enum {
   TOKEN_IDENTIFIER,
   TOKEN_NUMBER,
 
+  // Keywords.
+  TOKEN_PRINT,
+
   TOKEN_ERROR,
   TOKEN_EOF
 } TokenType;

@@ -88,7 +88,10 @@ static TokenType checkKeyword(int start, int length,
 }
 
 static TokenType identifierType() {
-  // TODO: Lookup keywords.
+  // TODO:
+  switch (lexer.start[0]) {
+  case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
+  }
 
   return TOKEN_IDENTIFIER;
 }

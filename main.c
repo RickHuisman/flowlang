@@ -1,13 +1,20 @@
 #include <stdio.h>
+
 #include "lexer.h"
+#include "parser.h"
 
 int main() {
   char* source = "print 10;";
 
-  initLexer(source);
+  Node ast = parse(source);
 
-  Token token = readToken();
-  printf("%2d '%.*s'\n", token.type, token.length, token.start);
+//  initLexer(source);
+//
+//  Token token = readToken();
+//  if (token.type == TOKEN_PRINT) {
+//    printf("FOOBAR");
+//  }
+//  printf("%2d '%.*s'\n", token.type, token.length, token.start);
 
   return 0;
 }
