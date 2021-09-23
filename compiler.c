@@ -58,7 +58,8 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 }
 
 static ObjFunction *endCompiler() {
-  // TODO: emit return.
+  emitByte(OP_RETURN); // TODO:
+
   ObjFunction *function = current->function;
   current = current->enclosing;
   return function;
@@ -79,11 +80,23 @@ static void compileBlock(Node *node) {
 //  }
 }
 
+static void compileNode(Node *node); // TODO: Placement.
+
 static void compileNumber(Node *node) {
   emitConstant(NUMBER_VAL(node->number));
 }
 
-static void compileNode(Node *node); // TODO: Placement.
+static void compileUnary(Node *node) {
+  compileNode(node->left);
+  switch(node->unaryOp) {
+  case UNARY_NEGATE: emitByte(OP_NEGATE); break;
+  /* case UNARY_NOT: emitByte(OP_NOT); break; */ // TODO:
+  }
+}
+
+static void compileBinary(Node *node) {
+  // TODO:
+}
 
 static void compilePrint(Node *node) {
   compileNode(node->left);
@@ -107,8 +120,10 @@ static void compileNode(Node *node) {
 //      }
       break;
     case NODE_UNARY:
+      compileUnary(node);
       break;
     case NODE_BINARY:
+      compileBinary(node);
       break;
     case NODE_PRINT:
       compilePrint(node);

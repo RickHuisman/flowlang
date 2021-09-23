@@ -19,6 +19,10 @@ typedef struct {
   } as;
 } Value;
 
+#define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
+
+#define AS_NUMBER(value)  ((value).as.number)
+
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
 
 typedef struct {

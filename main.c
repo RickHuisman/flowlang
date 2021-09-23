@@ -3,13 +3,19 @@
 #include "lexer.h"
 #include "parser.h"
 #include "compiler.h"
+#include "vm.h"
 
 int main() {
+  initVM();
+
   char* source = "print 10;";
 
-  Node ast = newPrint(newNumber(10.0));
-  ObjFunction *function = compile(&ast);
-  printf("foo");
+  /* Node ast = newPrint(newNumber(10.0)); */
+  /* ObjFunction *function = compile(&ast); */
+
+  /* printf("foo"); */
+
+  interpret(source);
 
 //  Node ast = parse(source);
 //  compile(&ast);
