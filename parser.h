@@ -4,6 +4,6 @@
 #include "lexer.h"
 #include "node.h"
 
-Node parse(const char *source);
+Ast *parse(const char *source);
 
 #endif

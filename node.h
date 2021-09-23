@@ -1,8 +1,6 @@
 #ifndef node_h
 #define node_h
 
-typedef struct Node Node;
-
 typedef enum {
   UNARY_NEGATE,
   UNARY_NOT,
@@ -29,30 +27,63 @@ typedef enum {
   NODE_NUMBER, // TODO: Change to NODE_LITERAL.
 } NodeType;
 
-struct Node {
+typedef struct Expr {
   NodeType type;
-  Node *next;
+  union {
+    // Number expression.
+    double number;
 
-  // Unary expression.
-  UnaryOperator unaryOp;
+    struct {
+      UnaryOperator op;
+      struct Expr *expr;
+    } unary;
 
-  // Unary, binary, print expression left value.
-  Node *left;
+    struct {
+      struct Expr *left;
+      BinaryOperator op;
+      struct Expr *right;
+    } binary;
 
-  // Binary expression.
-  BinaryOperator binaryOp;
-  Node *right;
+    struct {
+      struct Expr *expr;
+    } print;
+  } as; // TODO: As?
+} Node;
 
-  // Block expr.
-  Node *body;
+typedef struct Ast {
+  Node *node;
+  struct Ast *next;
+} Ast;
 
-  // Number literal.
-  double number; // TODO: Make literal.
-};
+//struct Node {
+//  NodeType type;
+//  struct Node *next;
+//
+//  // Unary expression.
+//  UnaryOperator unaryOp;
+//
+//  // Unary, binary, print expression left value.
+//  Node *left;
+//
+//  // Binary expression.
+//  BinaryOperator binaryOp;
+//  Node *right;
+//
+//  // Block expr.
+//  Node *body;
+//
+//  // Number literal.
+//  double number; // TODO: Make literal.
+//};
 
-Node newUnary(UnaryOperator op, Node left);
-Node newBinary(Node left, BinaryOperator op, Node right);
-Node newPrint(Node left);
-Node newNumber(double value);
+Node *newUnary(UnaryOperator op, Node *left);
+
+Node* newBinary(Node *left, BinaryOperator op, Node *right);
+
+Node newBlock(Node body);
+
+Node *newPrint(Node *expr);
+
+Node *newNumber(double value);
 
 #endif

@@ -22,7 +22,7 @@ typedef enum {
   PREC_PRIMARY,
 } Precedence;
 
-typedef Node (*ParseFn)();
+typedef Node *(*ParseFn)();
 
 typedef struct {
   ParseFn prefix;
@@ -66,16 +66,16 @@ static void consume(TokenType type, const char *message) {
   error(message);
 }
 
-static Node number() {
+static Node *number() {
   double value = strtod(parser.previous.start, NULL);
-  return newNumber(value);
+  return newNumber(value); // TODO
 }
 
-static Node expression();
-static ParseRule* getRule(TokenType type);
-static Node parsePrecedence(Precedence precedence);
+static Node *expression();
+static ParseRule *getRule(TokenType type);
+static Node *parsePrecedence(Precedence precedence);
 
-static Node unary() {
+static Node *unary() {
   TokenType op_token = parser.previous.type;
   UnaryOperator op;
   switch (op_token) {
@@ -85,11 +85,10 @@ static Node unary() {
     error("Unkown unary operator.");
   }
 
-  Node expr = expression();
-  return newUnary(op, expr);
+  return newUnary(op, expression());
 }
 
-static Node binary(Node left) {
+static Node *binary(Node *left) {
   TokenType op_token = parser.previous.type;
   BinaryOperator op;
   switch (op_token) { // TODO: Add more binary ops.
@@ -102,7 +101,7 @@ static Node binary(Node left) {
   }
 
   ParseRule *rule = getRule(op_token);
-  Node right = parsePrecedence((Precedence)(rule->precedence + 1));
+  Node *right = parsePrecedence((Precedence)(rule->precedence + 1));
 
   return newBinary(left, op, right);
 }
@@ -133,14 +132,14 @@ ParseRule rules[] = {
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
 
-static Node parsePrecedence(Precedence precedence) {
+static Node *parsePrecedence(Precedence precedence) {
   advance();
   ParseFn prefixRule = getRule(parser.previous.type)->prefix;
   if (prefixRule == NULL) {
     error("Expect expression.");
   }
 
-  Node expr = prefixRule();
+  Node *expr = prefixRule();
 
   while (precedence <= getRule(parser.current.type)->precedence) {
     advance();
@@ -155,17 +154,17 @@ static ParseRule *getRule(TokenType type) {
   return &rules[type];
 }
 
-static Node expression() {
+static Node *expression() {
   return parsePrecedence(PREC_ASSIGNMENT);
 }
 
-static Node expressionStatement() {
-  Node expr = expression();
+static Node *expressionStatement() {
+  Node *expr = expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
   return expr;
 }
 
-static Node declaration() {
+static Node* declaration() {
   if (match(TOKEN_PRINT)) {
     return newPrint(expressionStatement());
   }
@@ -181,23 +180,23 @@ static Node declaration() {
   /* } */
 }
 
-Node parse(const char *source) {
+Ast *parse(const char *source) {
   initLexer(source);
 
   // Call `advance` to prime the parser.
   advance();
 
-  Node head;
-  Node *cur = &head;
-
+  // TODO: Cleanup.
+  struct Ast *ast = NULL;
   while (!match(TOKEN_EOF)) {
-    Node decl = declaration();
-    cur->next = &decl;
-    cur = cur->next;
+    Node *decl = declaration();
+
+    struct Ast *link = malloc(sizeof(struct Ast));
+    link->node = decl;
+    link->next = ast;
+
+    ast = link;
   }
 
-  Node node;
-  node.type = NODE_BLOCK;
-  node.body = head.next;
-  return node;
+  return ast;
 }

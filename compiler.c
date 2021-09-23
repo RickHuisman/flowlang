@@ -1,10 +1,7 @@
 #include <stdio.h>
-#include <stdbool.h> // TODO: Remove.
 
 #include "compiler.h"
 #include "object.h"
-
-
 
 typedef enum FunctionType {
   TYPE_FUNCTION,
@@ -49,7 +46,7 @@ static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
-static void initCompiler(Compiler* compiler, FunctionType type) {
+static void initCompiler(Compiler *compiler, FunctionType type) {
   compiler->enclosing = current;
   compiler->function = NULL; // TODO: Necessary?
   compiler->type = type;
@@ -66,10 +63,10 @@ static ObjFunction *endCompiler() {
 }
 
 static void compileBlock(Node *node) {
-  printf("BLOCK");
-  for (Node *n = node->body; n; n = n->next) {
-    compile(n);
-  }
+//  printf("BLOCK");
+//  for (Node *n = node->body; n; n = n->next) {
+//    compile(n);
+//  }
 
   // TODO: Fix.
 //  compile(node->body);
@@ -82,64 +79,64 @@ static void compileBlock(Node *node) {
 
 static void compileNode(Node *node); // TODO: Placement.
 
-static void compileNumber(Node *node) {
-  emitConstant(NUMBER_VAL(node->number));
-}
-
 static void compileUnary(Node *node) {
-  compileNode(node->left);
-  switch(node->unaryOp) {
+  compileNode(node->as.unary.expr);
+  switch(node->as.unary.op) {
   case UNARY_NEGATE: emitByte(OP_NEGATE); break;
   /* case UNARY_NOT: emitByte(OP_NOT); break; */ // TODO:
   }
 }
 
 static void compileBinary(Node *node) {
-  // TODO:
+  compileNode(node->as.binary.left);
+  compileNode(node->as.binary.right);
+
+  switch(node->as.binary.op) {
+  case BINARY_ADD: emitByte(OP_ADD); break;
+  case BINARY_SUBTRACT: emitByte(OP_SUBTRACT); break;
+  case BINARY_MULTIPLY: emitByte(OP_MULTIPLY); break;
+  case BINARY_DIVIDE: emitByte(OP_DIVIDE); break;
+  }
 }
 
 static void compilePrint(Node *node) {
-  compileNode(node->left);
+  compileNode(node->as.print.expr);
   emitByte(OP_PRINT);
+}
+
+static void compileNumber(Node *node) {
+  emitConstant(NUMBER_VAL(node->as.number));
 }
 
 static void compileNode(Node *node) {
   switch (node->type) {
     case NODE_BLOCK: {
-      // TODO:
-//      Node *next = node->body;
-//      while (next != NULL) {
-//        printf("foobar\n");
-//        compileNode(next);
-//        next = next->next;
-//      }
+      break;
+      case NODE_UNARY:
+        compileUnary(node);
+        break;
+      case NODE_BINARY:
+        compileBinary(node);
+      break;
+      case NODE_PRINT:
+        compilePrint(node);
+      break;
+      case NODE_NUMBER:
+        compileNumber(node);
+      break;
     }
-//      printf("BLOCK\n");
-//      for (Node *n = node->body; n; n = n->next) {
-//          compile(n);
-//      }
-      break;
-    case NODE_UNARY:
-      compileUnary(node);
-      break;
-    case NODE_BINARY:
-      compileBinary(node);
-      break;
-    case NODE_PRINT:
-      compilePrint(node);
-      break;
-    case NODE_NUMBER:
-      compileNumber(node);
-      break;
   }
 }
 
-ObjFunction *compile(Node *ast) {
+ObjFunction *compile(Ast *ast) {
   Compiler compiler;
   initCompiler(&compiler, TYPE_SCRIPT);
 
-  // Compile ast node.
-  compileNode(ast);
+  // Compile ast.
+  for (Ast *cur = ast; cur; cur = cur->next) {
+    compileNode(cur->node);
+  }
 
   return endCompiler();
 }
+

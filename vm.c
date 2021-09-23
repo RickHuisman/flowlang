@@ -5,6 +5,7 @@
 #include "object.h"
 #include "compiler.h"
 #include "debug.h"
+#include "parser.h"
 
 VM vm;
 
@@ -52,9 +53,10 @@ static InterpretResult run() {
       push(constant);
       break;
     }
-    case OP_ADD: {
-      BINARY_OP(NUMBER_VAL, +);
-    }
+    case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+    case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
+    case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+    case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
     case OP_PRINT: {
       printValue(pop());
       printf("\n");
@@ -71,8 +73,9 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char *source) {
-  Node ast = newPrint(newNumber(10.0));
-  ObjFunction *function = compile(&ast);
+  Ast *ast = parse(source);
+
+  ObjFunction *function = compile(ast);
 
   vm.chunk = &function->chunk;
   vm.ip = vm.chunk->code;
