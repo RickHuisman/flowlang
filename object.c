@@ -2,12 +2,13 @@
 
 #include "object.h"
 #include "memory.h"
+#include "vm.h"
 
 #define ALLOCATE_OBJ(type, objectType) \
   (type*)allocateObject(sizeof(type), objectType)
 
-static Obj* allocateObject(size_t size, ObjType type) {
-  Obj* object = (Obj*)reallocate(NULL, 0, size);
+static Obj *allocateObject(size_t size, ObjType type) {
+  Obj *object = (Obj *) reallocate(NULL, 0, size);
   object->type = type;
   return object;
 }
@@ -18,3 +19,48 @@ ObjFunction *newFunction() {
   initChunk(&function->chunk);
   return function;
 }
+
+static ObjString *allocateString(char *chars, int length,
+                                 uint32_t hash) {
+  ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
+  string->length = length;
+  string->chars = chars;
+  string->hash = hash;
+
+  // TODO:
+//> Garbage Collection push-string
+//  push(OBJ_VAL(string));
+//< Garbage Collection push-string
+//> Hash Tables allocate-store-string
+  tableSet(&vm.strings, string, NIL_VAL);
+//> Garbage Collection pop-string
+//  pop();
+//< Garbage Collection pop-string
+
+  return string;
+}
+
+static uint32_t hashString(const char *key, int length) {
+  uint32_t hash = 2166136261u;
+
+  for (int i = 0; i < length; i++) {
+    hash ^= (uint8_t) key[i];
+    hash *= 16777619;
+  }
+
+  return hash;
+}
+
+ObjString *copyString(const char *chars, int length) {
+  uint32_t hash = hashString(chars, length);
+  ObjString *interned = tableFindString(&vm.strings, chars, length,
+                                        hash);
+  if (interned != NULL) return interned;
+
+  char *heapChars = ALLOCATE(char, length + 1);
+  memcpy(heapChars, chars, length);
+  heapChars[length] = '\n';
+
+  return allocateString(heapChars, length, hash);
+}
+

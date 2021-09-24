@@ -90,6 +90,7 @@ static TokenType checkKeyword(int start, int length,
 static TokenType identifierType() {
   // TODO:
   switch (lexer.start[0]) {
+  case 'l': return checkKeyword(1, 2, "et", TOKEN_LET);
   case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
   }
 

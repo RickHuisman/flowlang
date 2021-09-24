@@ -19,10 +19,17 @@ typedef enum {
   BINARY_LESS,
 } BinaryOperator;
 
+typedef struct {
+  const char *start;
+  int length;
+} Identifier;
+
 typedef enum {
   NODE_UNARY,
   NODE_BINARY,
-  NODE_BLOCK,
+  NODE_LET_ASSIGN,
+  NODE_LET_SET,
+  NODE_LET_GET,
   NODE_PRINT,
   NODE_NUMBER, // TODO: Change to NODE_LITERAL.
 } NodeType;
@@ -45,6 +52,20 @@ typedef struct Expr {
     } binary;
 
     struct {
+      Identifier ident;
+      struct Expr *expr;
+    } letAssign;
+
+    struct {
+      Identifier ident;
+      struct Expr *expr;
+    } letSet;
+
+    struct {
+      Identifier ident;
+    } letGet;
+
+    struct {
       struct Expr *expr;
     } print;
   } as; // TODO: As?
@@ -55,32 +76,17 @@ typedef struct Ast {
   struct Ast *next;
 } Ast;
 
-//struct Node {
-//  NodeType type;
-//  struct Node *next;
-//
-//  // Unary expression.
-//  UnaryOperator unaryOp;
-//
-//  // Unary, binary, print expression left value.
-//  Node *left;
-//
-//  // Binary expression.
-//  BinaryOperator binaryOp;
-//  Node *right;
-//
-//  // Block expr.
-//  Node *body;
-//
-//  // Number literal.
-//  double number; // TODO: Make literal.
-//};
+Identifier newIdent(const char *start, int length);
 
 Node *newUnary(UnaryOperator op, Node *left);
 
-Node* newBinary(Node *left, BinaryOperator op, Node *right);
+Node *newBinary(Node *left, BinaryOperator op, Node *right);
 
-Node newBlock(Node body);
+Node *newLetAssign(Identifier ident, Node *expr);
+
+Node *newLetSet(Identifier ident, Node *expr);
+
+Node *newLetGet(Identifier ident);
 
 Node *newPrint(Node *expr);
 

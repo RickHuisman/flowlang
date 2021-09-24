@@ -27,6 +27,7 @@ typedef enum {
   TOKEN_NUMBER,
 
   // Keywords.
+  TOKEN_LET,
   TOKEN_PRINT,
 
   TOKEN_ERROR,
