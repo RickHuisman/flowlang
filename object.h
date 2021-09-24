@@ -4,7 +4,10 @@
 #include "chunk.h"
 #include "value.h"
 
+#define OBJ_TYPE(value)        (AS_OBJ(value)->type)
+
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
+#define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->chars)
 
 typedef enum {
   OBJ_FUNCTION,
@@ -26,12 +29,14 @@ typedef struct {
 struct ObjString {
   Obj obj;
   int length;
-  char* chars;
+  char *chars;
   uint32_t hash;
 };
 
 ObjFunction *newFunction();
 
 ObjString *copyString(const char *chars, int length);
+
+void printObject(Value value);
 
 #endif

@@ -127,7 +127,7 @@ static Node *identifier() {
   Identifier ident = newIdent(source.start, source.length);
 
   if (match(TOKEN_EQUAL)) {
-    return newLetSet(ident, expressionStatement());
+    return newLetSet(ident, expression());
   }
 
   return newLetGet(ident);

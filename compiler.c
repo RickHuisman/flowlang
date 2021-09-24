@@ -198,6 +198,13 @@ static void compileLetGet(Node *node) {
   emitBytes(OP_GET_GLOBAL, arg);
 }
 
+static void compileLetSet(Node *node) {
+  compileNode(node->as.letSet.expr);
+
+  uint8_t arg = identifierConstant(&node->as.letSet.ident);
+  emitBytes(OP_SET_GLOBAL, arg);
+}
+
 static void compilePrint(Node *node) {
   compileNode(node->as.print.expr);
   emitByte(OP_PRINT);
@@ -219,7 +226,7 @@ static void compileNode(Node *node) {
       compileLetAssign(node);
       break;
     case NODE_LET_SET:
-//      compileLetSet(node); TODO:
+      compileLetSet(node);
       break;
     case NODE_LET_GET:
       compileLetGet(node);

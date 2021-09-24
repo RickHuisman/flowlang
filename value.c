@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include "value.h"
+#include "object.h"
 
 void initValueArray(ValueArray *array) {
   array->values = NULL;
@@ -39,8 +40,7 @@ void printValue(Value value) {
       printf("%g", AS_NUMBER(value));
       break;
     case VAL_OBJ:
-      // TODO: Print obj.
-//      printObject(value);
+      printObject(value);
       break;
   }
 }
