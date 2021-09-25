@@ -56,6 +56,15 @@ Node *newBlock(ModuleAst *block) {
   return node;
 }
 
+Node *newIfElse(Node *condition, Node *then, Node *else_) {
+  Node *node = malloc(sizeof(Node));
+  node->type = NODE_IF_ELSE;
+  node->as.ifElse.condition = condition;
+  node->as.ifElse.then = then;
+  node->as.ifElse.else_ = else_;
+  return node;
+}
+
 Node *newPrint(Node *expr) {
   Node *node = malloc(sizeof(Node));
   node->type = NODE_PRINT;

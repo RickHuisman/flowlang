@@ -3,7 +3,9 @@
 int main() {
   initVM();
 
-  char* source = "{ let x = 5; x = 10; print x; }";
+  char* source = "if 5 < 2 { print 5; } else { print 2; }";
+
+//  char* source = "print 5 > 2;";
   interpret(source);
 
   return 0;

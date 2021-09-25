@@ -43,6 +43,13 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
   emitByte(byte2);
 }
 
+static int emitJump(uint8_t instruction) {
+  emitByte(instruction);
+  emitByte(0xff);
+  emitByte(0xff);
+  return currentChunk()->count - 2;
+}
+
 static uint8_t makeConstant(Value value) {
   int constant = addConstant(currentChunk(), value);
   if (constant > UINT8_MAX) {
@@ -55,6 +62,19 @@ static uint8_t makeConstant(Value value) {
 
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void patchJump(int offset) {
+  // -2 to adjust for the bytecode for the jump offset itself.
+  int jump = currentChunk()->count - offset - 2;
+
+  if (jump > UINT16_MAX) {
+    // TODO: Throw error.
+//    error("Too much code to jump over.");
+  }
+
+  currentChunk()->code[offset] = (jump >> 8) & 0xff;
+  currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static void initCompiler(Compiler *compiler, FunctionType type) {
@@ -152,6 +172,24 @@ static void compileBinary(Node *node) {
     case BINARY_DIVIDE:
       emitByte(OP_DIVIDE);
       break;
+    case BINARY_EQUAL:
+      emitByte(OP_EQUAL);
+      break;
+    case BINARY_BANG_EQUAL:
+      emitBytes(OP_EQUAL, OP_NOT);
+      break;
+    case BINARY_GREATER_EQUAL:
+      emitBytes(OP_LESS, OP_NOT);
+      break;
+    case BINARY_GREATER:
+      emitByte(OP_GREATER);
+      break;
+    case BINARY_LESS_EQUAL:
+      emitBytes(OP_GREATER, OP_NOT);
+      break;
+    case BINARY_LESS:
+      emitByte(OP_LESS);
+      break;
   }
 }
 
@@ -243,6 +281,29 @@ static void compileBlock(Node *node) {
   endScope();
 }
 
+static void compileIfElse(Node *node) {
+  compileNode(node->as.ifElse.condition);
+
+  // Jump to else branch if false.
+  int thenJump = emitJump(OP_JUMP_IF_FALSE);
+  emitByte(OP_POP);
+
+  compileBlock(node->as.ifElse.then);
+
+  int elseJump = emitJump(OP_JUMP);
+
+  patchJump(thenJump);
+  emitByte(OP_POP);
+
+  // Compile else branch if set.
+  Node *elseBranch = node->as.ifElse.else_;
+  if (elseBranch != NULL) {
+    compileBlock(elseBranch);
+  }
+
+  patchJump(elseJump);
+}
+
 static void compilePrint(Node *node) {
   compileNode(node->as.print.expr);
   emitByte(OP_PRINT);
@@ -272,6 +333,9 @@ static void compileNode(Node *node) {
     case NODE_BLOCK:
       compileBlock(node);
       break;
+    case NODE_IF_ELSE:
+      compileIfElse(node);
+      break;
     case NODE_PRINT:
       compilePrint(node);
       break;
@@ -281,7 +345,7 @@ static void compileNode(Node *node) {
   }
 }
 
-// TODO: Cleanup. Find a cleaner way to traverse the block.
+// TODO: Cleanup. Find a cleaner way to traverse the parseBlock.
 static void compileAst(ModuleAst *ast) {
   if (ast->next != NULL) {
     compileAst(ast->next);

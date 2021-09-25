@@ -114,8 +114,26 @@ static Node *binary(Node *left) {
     case TOKEN_SLASH:
       op = BINARY_DIVIDE;
       break;
+    case TOKEN_BANG_EQUAL:
+      op = BINARY_BANG_EQUAL;
+      break;
+    case TOKEN_EQUAL_EQUAL:
+      op = BINARY_EQUAL;
+      break;
+    case TOKEN_GREATER:
+      op = BINARY_GREATER;
+      break;
+    case TOKEN_GREATER_EQUAL:
+      op = BINARY_GREATER_EQUAL;
+      break;
+    case TOKEN_LESS:
+      op = BINARY_LESS;
+      break;
+    case TOKEN_LESS_EQUAL:
+      op = BINARY_LESS_EQUAL;
+      break;
     default:
-      error("Unkown binary operator.");
+      error("Unknown binary operator.");
   }
 
   ParseRule *rule = getRule(op_token);
@@ -147,14 +165,14 @@ ParseRule rules[] = {
     [TOKEN_SEMICOLON]     = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH]         = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR]          = {NULL, binary, PREC_FACTOR},
-    [TOKEN_BANG]          = {NULL, NULL, PREC_NONE},
-    [TOKEN_BANG_EQUAL]    = {NULL, NULL, PREC_NONE},
+    [TOKEN_BANG]          = {NULL, NULL, PREC_NONE}, // TODO: Unary.
+    [TOKEN_BANG_EQUAL]    = {NULL, binary, PREC_EQUALITY},
     [TOKEN_EQUAL]         = {NULL, NULL, PREC_NONE},
-    [TOKEN_EQUAL_EQUAL]   = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER]       = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS]          = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS_EQUAL]    = {NULL, NULL, PREC_NONE},
+    [TOKEN_EQUAL_EQUAL]   = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_GREATER]       = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_LESS]          = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_LESS_EQUAL]    = {NULL, binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER]    = {identifier, NULL, PREC_NONE},
     [TOKEN_NUMBER]        = {number, NULL, PREC_NONE},
     [TOKEN_ERROR]         = {NULL, NULL, PREC_NONE},
@@ -199,17 +217,17 @@ static Node *expressionStatement() {
   return expr;
 }
 
-static Node *print() {
+static Node *parsePrint() {
   return newPrint(expressionStatement());
 }
 
-static Node *letAssign() {
+static Node *parseLetAssign() {
   Identifier ident = parseIdentifier();
   consume(TOKEN_EQUAL, "Expect '=' after identifier.");
   return newLetAssign(ident, expressionStatement());
 }
 
-static Node *block() {
+static Node *parseBlock() {
   struct ModuleAst *block = NULL;
   while (!check(TOKEN_RIGHT_BRACE) &&
          !check(TOKEN_EOF)) {
@@ -222,14 +240,32 @@ static Node *block() {
     block = link;
   }
 
-  consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after parseBlock.");
   return newBlock(block);
 }
 
+static Node *parseIf() {
+  Node *condition = expression();
+
+  // Then clause.
+  consume(TOKEN_LEFT_BRACE, "Expect '{' after if condition.");
+  Node *then = parseBlock();
+
+  // Else clause.
+  Node *else_ = NULL;
+  if (match(TOKEN_ELSE)) {
+    consume(TOKEN_LEFT_BRACE, "Expect '{' after else.");
+    else_ = parseBlock();
+  }
+
+  return newIfElse(condition, then, else_);
+}
+
 static Node *declaration() {
-  if (match(TOKEN_PRINT)) return print();
-  if (match(TOKEN_LET)) return letAssign();
-  if (match(TOKEN_LEFT_BRACE)) return block();
+  if (match(TOKEN_PRINT)) return parsePrint();
+  if (match(TOKEN_LET)) return parseLetAssign();
+  if (match(TOKEN_LEFT_BRACE)) return parseBlock();
+  if (match(TOKEN_IF)) return parseIf();
   return expressionStatement();
 }
 

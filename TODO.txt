@@ -1,13 +1,8 @@
-* Global variables
-* Local variables
 * Functions
 * Closures
 * Structs
 
 [Expressions]
-* Let assign
-* Let get
-* Let set
 * If else
 * Block
 * While

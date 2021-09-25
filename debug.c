@@ -31,6 +31,15 @@ static int byteInstruction(const char *name, Chunk *chunk,
   return offset + 2;
 }
 
+static int jumpInstruction(const char *name, int sign,
+                           Chunk *chunk, int offset) {
+  uint16_t jump = (uint16_t) (chunk->code[offset + 1] << 8);
+  jump |= chunk->code[offset + 2];
+  printf("%-16s %4d -> %d\n", name, offset,
+         offset + 3 + sign * jump);
+  return offset + 3;
+}
+
 int disassembleInstruction(Chunk *chunk, int offset) {
   printf("%04d ", offset);
 
@@ -56,8 +65,16 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return simpleInstruction("OP_MULTIPLY", offset);
     case OP_DIVIDE:
       return simpleInstruction("OP_DIVIDE", offset);
+    case OP_EQUAL:
+      return simpleInstruction("OP_EQUAL", offset);
+    case OP_GREATER:
+      return simpleInstruction("OP_GREATER", offset);
+    case OP_LESS:
+      return simpleInstruction("OP_LESS", offset);
     case OP_NEGATE:
       return simpleInstruction("OP_NEGATE", offset);
+    case OP_NOT:
+      return simpleInstruction("OP_NOT", offset);
     case OP_DEFINE_GLOBAL:
       return constantInstruction("OP_DEFINE_GLOBAL", chunk,
                                  offset);
@@ -71,6 +88,10 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return byteInstruction("OP_SET_LOCAL", chunk, offset);
     case OP_POP:
       return simpleInstruction("OP_POP", offset);
+    case OP_JUMP:
+      return jumpInstruction("OP_JUMP", 1, chunk, offset);
+    case OP_JUMP_IF_FALSE:
+      return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OP_PRINT:
       return simpleInstruction("OP_PRINT", offset);
     default:
@@ -78,4 +99,3 @@ int disassembleInstruction(Chunk *chunk, int offset) {
       return offset + 1;
   }
 }
-

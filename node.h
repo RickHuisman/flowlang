@@ -31,6 +31,7 @@ typedef enum {
   NODE_LET_SET,
   NODE_LET_GET,
   NODE_BLOCK,
+  NODE_IF_ELSE,
   NODE_PRINT,
   NODE_NUMBER, // TODO: Change to NODE_LITERAL.
 } NodeType;
@@ -73,6 +74,12 @@ typedef struct Expr {
     } block;
 
     struct {
+      struct Expr *condition;
+      struct Expr *then;
+      struct Expr *else_;
+    } ifElse;
+
+    struct {
       struct Expr *expr;
     } print;
   } as; // TODO: As?
@@ -97,6 +104,8 @@ Node *newLetSet(Identifier ident, Node *expr);
 Node *newLetGet(Identifier ident);
 
 Node *newBlock(ModuleAst *ast);
+
+Node *newIfElse(Node *condition, Node *then, Node *else_);
 
 Node *newPrint(Node *expr);
 

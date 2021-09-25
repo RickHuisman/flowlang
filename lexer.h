@@ -29,6 +29,8 @@ typedef enum {
   // Keywords.
   TOKEN_LET,
   TOKEN_PRINT,
+  TOKEN_IF,
+  TOKEN_ELSE,
 
   TOKEN_ERROR,
   TOKEN_EOF
