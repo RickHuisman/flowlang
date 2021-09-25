@@ -75,6 +75,8 @@ static Node *expression();
 
 static Node *expressionStatement();
 
+static Node *declaration();
+
 static ParseRule *getRule(TokenType type);
 
 static Node *parsePrecedence(Precedence precedence);
@@ -207,24 +209,42 @@ static Node *letAssign() {
   return newLetAssign(ident, expressionStatement());
 }
 
+static Node *block() {
+  struct ModuleAst *block = NULL;
+  while (!check(TOKEN_RIGHT_BRACE) &&
+         !check(TOKEN_EOF)) {
+    Node *decl = declaration();
+
+    struct ModuleAst *link = malloc(sizeof(struct ModuleAst));
+    link->node = decl;
+    link->next = block;
+
+    block = link;
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+  return newBlock(block);
+}
+
 static Node *declaration() {
   if (match(TOKEN_PRINT)) return print();
   if (match(TOKEN_LET)) return letAssign();
+  if (match(TOKEN_LEFT_BRACE)) return block();
   return expressionStatement();
 }
 
-Ast *parse(const char *source) {
+ModuleAst *parse(const char *source) {
   initLexer(source);
 
   // Call `advance` to prime the parser.
   advance();
 
   // TODO: Cleanup.
-  struct Ast *ast = NULL;
+  struct ModuleAst *ast = NULL;
   while (!match(TOKEN_EOF)) {
     Node *decl = declaration();
 
-    struct Ast *link = malloc(sizeof(struct Ast));
+    struct ModuleAst *link = malloc(sizeof(struct ModuleAst));
     link->node = decl;
     link->next = ast;
 

@@ -5,6 +5,6 @@
 #include "node.h"
 #include "object.h"
 
-ObjFunction *compile(Ast *ast);
+ObjFunction *compile(ModuleAst *block);
 
 #endif

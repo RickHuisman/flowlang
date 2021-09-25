@@ -49,6 +49,13 @@ Node *newLetGet(Identifier ident) {
   return node;
 }
 
+Node *newBlock(ModuleAst *block) {
+  Node *node = malloc(sizeof(Node));
+  node->type = NODE_BLOCK;
+  node->as.block.block = block;
+  return node;
+}
+
 Node *newPrint(Node *expr) {
   Node *node = malloc(sizeof(Node));
   node->type = NODE_PRINT;

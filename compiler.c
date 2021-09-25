@@ -81,6 +81,21 @@ static ObjFunction *endCompiler() {
   return function;
 }
 
+static void beginScope() {
+  current->scopeDepth++;
+}
+
+static void endScope() {
+  current->scopeDepth--;
+
+  while (current->localCount > 0 &&
+         current->locals[current->localCount - 1].depth >
+         current->scopeDepth) {
+    emitByte(OP_POP);
+    current->localCount--;
+  }
+}
+
 static uint8_t identifierConstant(Identifier *name) {
   return makeConstant(OBJ_VAL(copyString(name->start,
                                          name->length)));
@@ -91,22 +106,24 @@ static bool identifiersEqual(Identifier *a, Identifier *b) {
   return memcmp(a->start, b->start, a->length) == 0;
 }
 
-static void compileBlock(Node *node) {
-//  printf("BLOCK");
-//  for (Node *n = node->body; n; n = n->next) {
-//    compile(n);
-//  }
+static int resolveLocal(Compiler *compiler, Identifier *name) {
+  for (int i = compiler->localCount - 1; i >= 0; i--) {
+    Local *local = &compiler->locals[i];
+    if (identifiersEqual(name, &local->name)) {
+      if (local->depth == -1) {
+        // TODO: Throw error.
+//        error("Can't read local variable in its own initializer.");
+      }
+      return i;
+    }
+  }
 
-  // TODO: Fix.
-//  compile(node->body);
-//  Node *next = node->body;
-//  while (next != NULL) {
-//    printf("foo\n");
-//    next = NULL;
-//  }
+  return -1;
 }
 
 static void compileNode(Node *node); // TODO: Placement.
+
+static void compileAst(ModuleAst *ast);
 
 static void compileUnary(Node *node) {
   compileNode(node->as.unary.expr);
@@ -157,7 +174,7 @@ static void declareVariable(Identifier *name) { // TODO: Pass as reference?
   for (int i = current->localCount - 1; i >= 0; i--) {
     Local *local = &current->locals[i];
     if (local->depth != -1 && local->depth < current->scopeDepth) {
-      break; // [negative] // TODO: [negative]?
+      break;
     }
 
     if (identifiersEqual(name, &local->name)) {
@@ -178,6 +195,7 @@ static void markInitialized() {
 static void defineVariable(Identifier *name) {
   if (current->scopeDepth > 0) {
     markInitialized();
+    return;
   }
 
   uint8_t global = identifierConstant(name);
@@ -194,15 +212,35 @@ static void compileLetAssign(Node *node) {
 }
 
 static void compileLetGet(Node *node) {
-  uint8_t arg = identifierConstant(&node->as.letGet.ident);
-  emitBytes(OP_GET_GLOBAL, arg);
+  int arg = resolveLocal(current, &node->as.letGet.ident);
+  if (arg != -1) {
+    // Local variable.
+    emitBytes(OP_GET_LOCAL, (uint8_t) arg);
+  } else {
+    // Global variable.
+    uint8_t constant = identifierConstant(&node->as.letGet.ident);
+    emitBytes(OP_GET_GLOBAL, constant);
+  }
 }
 
 static void compileLetSet(Node *node) {
   compileNode(node->as.letSet.expr);
 
-  uint8_t arg = identifierConstant(&node->as.letSet.ident);
-  emitBytes(OP_SET_GLOBAL, arg);
+  int arg = resolveLocal(current, &node->as.letSet.ident);
+  if (arg != -1) {
+    // Local variable.
+    emitBytes(OP_SET_LOCAL, (uint8_t) arg);
+  } else {
+    // Global variable.
+    uint8_t constant = identifierConstant(&node->as.letSet.ident);
+    emitBytes(OP_SET_GLOBAL, constant);
+  }
+}
+
+static void compileBlock(Node *node) {
+  beginScope();
+  compileAst(node->as.block.block);
+  endScope();
 }
 
 static void compilePrint(Node *node) {
@@ -231,6 +269,9 @@ static void compileNode(Node *node) {
     case NODE_LET_GET:
       compileLetGet(node);
       break;
+    case NODE_BLOCK:
+      compileBlock(node);
+      break;
     case NODE_PRINT:
       compilePrint(node);
       break;
@@ -240,8 +281,8 @@ static void compileNode(Node *node) {
   }
 }
 
-// TODO: Cleanup. Find a cleaner way to traverse the ast.
-static void compileAst(Ast *ast) {
+// TODO: Cleanup. Find a cleaner way to traverse the block.
+static void compileAst(ModuleAst *ast) {
   if (ast->next != NULL) {
     compileAst(ast->next);
   }
@@ -249,7 +290,7 @@ static void compileAst(Ast *ast) {
   compileNode(ast->node);
 }
 
-ObjFunction *compile(Ast *ast) {
+ObjFunction *compile(ModuleAst *ast) {
   Compiler compiler;
   initCompiler(&compiler, TYPE_SCRIPT);
 

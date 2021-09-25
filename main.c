@@ -3,7 +3,7 @@
 int main() {
   initVM();
 
-  char* source = "let x = 10; x = 5; print x * 2;";
+  char* source = "{ let x = 5; x = 10; print x; }";
   interpret(source);
 
   return 0;

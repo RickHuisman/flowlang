@@ -30,9 +30,12 @@ typedef enum {
   NODE_LET_ASSIGN,
   NODE_LET_SET,
   NODE_LET_GET,
+  NODE_BLOCK,
   NODE_PRINT,
   NODE_NUMBER, // TODO: Change to NODE_LITERAL.
 } NodeType;
+
+typedef struct ModuleAst ModuleAst;
 
 typedef struct Expr {
   NodeType type;
@@ -66,15 +69,20 @@ typedef struct Expr {
     } letGet;
 
     struct {
+      ModuleAst *block;
+    } block;
+
+    struct {
       struct Expr *expr;
     } print;
   } as; // TODO: As?
 } Node;
 
-typedef struct Ast {
+// TODO: Rename to Block?
+typedef struct ModuleAst {
   Node *node;
-  struct Ast *next;
-} Ast;
+  struct ModuleAst *next;
+} ModuleAst;
 
 Identifier newIdent(const char *start, int length);
 
@@ -87,6 +95,8 @@ Node *newLetAssign(Identifier ident, Node *expr);
 Node *newLetSet(Identifier ident, Node *expr);
 
 Node *newLetGet(Identifier ident);
+
+Node *newBlock(ModuleAst *ast);
 
 Node *newPrint(Node *expr);
 
