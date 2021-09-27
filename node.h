@@ -30,6 +30,8 @@ typedef enum {
   NODE_LET_ASSIGN,
   NODE_LET_SET,
   NODE_LET_GET,
+  NODE_FUNCTION,
+  NODE_CALL,
   NODE_BLOCK,
   NODE_IF_ELSE,
   NODE_PRINT,
@@ -37,6 +39,7 @@ typedef enum {
 } NodeType;
 
 typedef struct ModuleAst ModuleAst;
+typedef struct Args Args;
 
 typedef struct Expr {
   NodeType type;
@@ -70,6 +73,17 @@ typedef struct Expr {
     } letGet;
 
     struct {
+      Identifier name;
+      Args *args;
+      struct Expr *body;
+    } function;
+
+    struct {
+      struct Expr *callee;
+      // TODO: args.
+    } call;
+
+    struct {
       ModuleAst *block;
     } block;
 
@@ -91,6 +105,12 @@ typedef struct ModuleAst {
   struct ModuleAst *next;
 } ModuleAst;
 
+typedef struct Args {
+  Identifier *node;
+  struct Args *next;
+  int count;
+} Args;
+
 Identifier newIdent(const char *start, int length);
 
 Node *newUnary(UnaryOperator op, Node *left);
@@ -102,6 +122,10 @@ Node *newLetAssign(Identifier ident, Node *expr);
 Node *newLetSet(Identifier ident, Node *expr);
 
 Node *newLetGet(Identifier ident);
+
+Node *newFunctionNode(Identifier name, Args *args, Node *body);
+
+Node *newCall(Node *callee);
 
 Node *newBlock(ModuleAst *ast);
 

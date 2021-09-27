@@ -49,6 +49,22 @@ Node *newLetGet(Identifier ident) {
   return node;
 }
 
+Node *newFunctionNode(Identifier name, Args *args, Node *body) {
+  Node *node = malloc(sizeof(Node));
+  node->type = NODE_FUNCTION;
+  node->as.function.name = name;
+  node->as.function.args = args;
+  node->as.function.body = body;
+  return node;
+}
+
+Node *newCall(Node *callee) {
+  Node *node = malloc(sizeof(Node));
+  node->type = NODE_CALL;
+  node->as.call.callee = callee;
+  return node;
+}
+
 Node *newBlock(ModuleAst *block) {
   Node *node = malloc(sizeof(Node));
   node->type = NODE_BLOCK;

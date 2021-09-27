@@ -31,6 +31,7 @@ typedef enum {
   TOKEN_PRINT,
   TOKEN_IF,
   TOKEN_ELSE,
+  TOKEN_FUN,
 
   TOKEN_ERROR,
   TOKEN_EOF

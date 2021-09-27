@@ -2,6 +2,7 @@
 
 #include "compiler.h"
 #include "object.h"
+#include "debug.h"
 
 // TODO: Move into "common.h"
 #define UINT8_COUNT (UINT8_MAX + 1)
@@ -79,25 +80,26 @@ static void patchJump(int offset) {
 
 static void initCompiler(Compiler *compiler, FunctionType type) {
   compiler->enclosing = current;
-  compiler->function = NULL; // TODO: Necessary?
+  compiler->function = NULL;
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
   compiler->function = newFunction();
   current = compiler;
 
-  // TODO:
-//  Local* local = &current->locals[current->localCount++];
-//  local->depth = 0;
-////> Closures init-zero-local-is-captured
-//  local->isCaptured = false;
+  Local *local = &current->locals[current->localCount++];
+  local->depth = 0;
+  local->name.start = "";
+  local->name.length = 0;
 }
 
 static ObjFunction *endCompiler() {
   emitByte(OP_RETURN); // TODO:
 
   ObjFunction *function = current->function;
+  disassembleChunk(&function->chunk, "TODO"); // TODO:
   current = current->enclosing;
+
   return function;
 }
 
@@ -275,6 +277,39 @@ static void compileLetSet(Node *node) {
   }
 }
 
+// TODO: Rename.
+static void function(Node *body, Identifier name) {
+  Compiler compiler;
+  initCompiler(&compiler, TYPE_FUNCTION); // TODO: function type.
+  beginScope();
+
+  // Compile parameters.
+  // TODO:
+
+  // Compile body.
+  compileNode(body);
+
+  // Create the function object.
+  ObjFunction *function = endCompiler();
+  function->name = copyString(name.start, name.length);
+  function->arity = 0; // TODO: Set arity.
+
+  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+}
+
+static void compileFunction(Node *node) {
+  function(node->as.function.body, node->as.function.name);
+
+  defineVariable(&node->as.function.name);
+}
+
+static void compileCall(Node *node) {
+  compileNode(node->as.call.callee);
+
+  uint8_t argCount = 0; // TODO:
+  emitBytes(OP_CALL, argCount);
+}
+
 static void compileBlock(Node *node) {
   beginScope();
   compileAst(node->as.block.block);
@@ -330,6 +365,12 @@ static void compileNode(Node *node) {
     case NODE_LET_GET:
       compileLetGet(node);
       break;
+    case NODE_FUNCTION:
+      compileFunction(node);
+      break;
+    case NODE_CALL:
+      compileCall(node);
+      break;
     case NODE_BLOCK:
       compileBlock(node);
       break;
@@ -362,4 +403,3 @@ ObjFunction *compile(ModuleAst *ast) {
 
   return endCompiler();
 }
-

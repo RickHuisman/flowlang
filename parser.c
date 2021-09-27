@@ -142,6 +142,12 @@ static Node *binary(Node *left) {
   return newBinary(left, op, right);
 }
 
+static Node *call(Node *left) {
+  consume(TOKEN_RIGHT_PAREN, ""); // TODO: Message.
+  // TODO: Emit argCount.
+  return newCall(left);
+}
+
 static Node *identifier() {
   Token source = parser.previous;
   Identifier ident = newIdent(source.start, source.length);
@@ -154,7 +160,7 @@ static Node *identifier() {
 }
 
 ParseRule rules[] = {
-    // [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE}, TODO Grouping
+    [TOKEN_LEFT_PAREN]    = {NULL, call, PREC_CALL}, // TODO: Grouping.
     [TOKEN_RIGHT_PAREN]   = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE]   = {NULL, NULL, PREC_NONE},
@@ -228,6 +234,8 @@ static Node *parseLetAssign() {
 }
 
 static Node *parseBlock() {
+  consume(TOKEN_LEFT_BRACE, "Expect '{'."); // TODO: Message.
+
   struct ModuleAst *block = NULL;
   while (!check(TOKEN_RIGHT_BRACE) &&
          !check(TOKEN_EOF)) {
@@ -248,24 +256,71 @@ static Node *parseIf() {
   Node *condition = expression();
 
   // Then clause.
-  consume(TOKEN_LEFT_BRACE, "Expect '{' after if condition.");
   Node *then = parseBlock();
 
   // Else clause.
   Node *else_ = NULL;
   if (match(TOKEN_ELSE)) {
-    consume(TOKEN_LEFT_BRACE, "Expect '{' after else.");
     else_ = parseBlock();
   }
 
   return newIfElse(condition, then, else_);
 }
 
+static Args *parseArgs() {
+//  static uint8_t argumentList() {
+//    uint8_t argCount = 0;
+//    if (!check(TOKEN_RIGHT_PAREN)) {
+//      do {
+//        expression();
+//        argCount++;
+//      } while (match(TOKEN_COMMA));
+//    }
+//    consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+//    return argCount;
+//  }
+//
+
+  struct Args *args = NULL;
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      // TODO: Error.
+//      if (current->function->arity > 255) {
+//        errorAtCurrent("Can't have more than 255 parameters.");
+//      }
+      Identifier arg = parseIdentifier();
+
+      struct Args *link = malloc(sizeof(struct Args));
+      link->node = &arg; // TODO: as reference?
+      link->next = args;
+
+      args = link;
+
+      args->count++;
+    } while (match(TOKEN_COMMA));
+  }
+
+  return args;
+}
+
+static Node *parseFunction() {
+  Identifier name = parseIdentifier();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+  Args *args = parseArgs();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+
+  Node *body = parseBlock();
+
+  return newFunctionNode(name, args, body);
+}
+
 static Node *declaration() {
   if (match(TOKEN_PRINT)) return parsePrint();
   if (match(TOKEN_LET)) return parseLetAssign();
-  if (match(TOKEN_LEFT_BRACE)) return parseBlock();
+  if (check(TOKEN_LEFT_BRACE)) return parseBlock();
   if (match(TOKEN_IF)) return parseIf();
+  if (match(TOKEN_FUN)) return parseFunction();
   return expressionStatement();
 }
 
