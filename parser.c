@@ -71,6 +71,12 @@ static Node *number() {
   return newNumber(value); // TODO
 }
 
+static Identifier parseIdentifier() {
+  consume(TOKEN_IDENTIFIER, "Expect identifier.");
+  Token source = parser.previous;
+  return newIdent(source.start, source.length);
+}
+
 static Node *expression();
 
 static Node *expressionStatement();
@@ -143,9 +149,25 @@ static Node *binary(Node *left) {
 }
 
 static Node *call(Node *left) {
+  // TODO: Move into function.
+  // TODO: Create a struct of (arglist, arity).
+  int arity = 0;
+  Node *args = malloc(MAX_ARG_COUNT*sizeof(Node));
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      // TODO: Error.
+//      if (current->function->arity > 255) {
+//        errorAtCurrent("Can't have more than 255 parameters.");
+//      }
+      Node *foo = expression();
+      args[arity] = *foo; // TODO: Dereference?
+      arity += 1;
+    } while (match(TOKEN_COMMA));
+  }
+
   consume(TOKEN_RIGHT_PAREN, ""); // TODO: Message.
-  // TODO: Emit argCount.
-  return newCall(left);
+
+  return newCall(left, args, arity);
 }
 
 static Node *identifier() {
@@ -207,12 +229,6 @@ static ParseRule *getRule(TokenType type) {
   return &rules[type];
 }
 
-static Identifier parseIdentifier() {
-  consume(TOKEN_IDENTIFIER, "Expect identifier.");
-  Token source = parser.previous;
-  return newIdent(source.start, source.length);
-}
-
 static Node *expression() {
   return parsePrecedence(PREC_ASSIGNMENT);
 }
@@ -267,52 +283,67 @@ static Node *parseIf() {
   return newIfElse(condition, then, else_);
 }
 
-static Args *parseArgs() {
-//  static uint8_t argumentList() {
-//    uint8_t argCount = 0;
-//    if (!check(TOKEN_RIGHT_PAREN)) {
-//      do {
-//        expression();
-//        argCount++;
-//      } while (match(TOKEN_COMMA));
-//    }
-//    consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
-//    return argCount;
-//  }
+//static Identifier *parseArgs() {
+////  static uint8_t argumentList() {
+////    uint8_t argCount = 0;
+////    if (!check(TOKEN_RIGHT_PAREN)) {
+////      do {
+////        expression();
+////        argCount++;
+////      } while (match(TOKEN_COMMA));
+////    }
+////    consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+////    return argCount;
+////  }
+////
 //
+////  struct Args *args = NULL;
+////  if (!check(TOKEN_RIGHT_PAREN)) {
+////    do {
+////      // TODO: Error.
+//////      if (current->function->arity > 255) {
+//////        errorAtCurrent("Can't have more than 255 parameters.");
+//////      }
+////      Identifier arg = parseIdentifier();
+////
+////      struct Args *link = malloc(sizeof(struct Args));
+////      link->node = &arg; // TODO: as reference?
+////      link->next = args;
+////
+////      args = link;
+////
+////      args->count++;
+////    } while (match(TOKEN_COMMA));
+////  }
+//
+//  return args;
+//}
 
-  struct Args *args = NULL;
+static Node *parseFunction() {
+  Identifier name = parseIdentifier();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+
+  // TODO: Move into function.
+  // TODO: Create a struct of (arglist, arity).
+  int arity = 0;
+  Identifier *args = malloc(MAX_ARG_COUNT*sizeof(Identifier));
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
       // TODO: Error.
 //      if (current->function->arity > 255) {
 //        errorAtCurrent("Can't have more than 255 parameters.");
 //      }
-      Identifier arg = parseIdentifier();
-
-      struct Args *link = malloc(sizeof(struct Args));
-      link->node = &arg; // TODO: as reference?
-      link->next = args;
-
-      args = link;
-
-      args->count++;
+      args[arity] = parseIdentifier();
+      arity += 1;
     } while (match(TOKEN_COMMA));
   }
 
-  return args;
-}
-
-static Node *parseFunction() {
-  Identifier name = parseIdentifier();
-
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
-  Args *args = parseArgs();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
 
   Node *body = parseBlock();
 
-  return newFunctionNode(name, args, body);
+  return newFunctionNode(name, args, arity, body);
 }
 
 static Node *declaration() {

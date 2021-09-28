@@ -15,7 +15,6 @@ typedef struct {
 
 typedef enum FunctionType {
   TYPE_FUNCTION,
-  TYPE_METHOD,
   TYPE_SCRIPT,
 } FunctionType;
 
@@ -153,7 +152,9 @@ static void compileUnary(Node *node) {
     case UNARY_NEGATE:
       emitByte(OP_NEGATE);
       break;
-      /* case UNARY_NOT: emitByte(OP_NOT); break; */ // TODO:
+    case UNARY_NOT:
+      emitByte(OP_NOT);
+      break;
   }
 }
 
@@ -278,27 +279,31 @@ static void compileLetSet(Node *node) {
 }
 
 // TODO: Rename.
-static void function(Node *body, Identifier name) {
+static void function(Node *node, Identifier name) {
   Compiler compiler;
   initCompiler(&compiler, TYPE_FUNCTION); // TODO: function type.
   beginScope();
 
   // Compile parameters.
-  // TODO:
+  for (int i = 0; i < node->as.function.arity; i++) {
+    Identifier arg = node->as.function.args[i];
+    declareVariable(&arg);
+    defineVariable(&arg);
+  }
 
   // Compile body.
-  compileNode(body);
+  compileNode(node->as.function.body);
 
   // Create the function object.
   ObjFunction *function = endCompiler();
   function->name = copyString(name.start, name.length);
-  function->arity = 0; // TODO: Set arity.
+  function->arity = node->as.function.arity;
 
   emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
 }
 
 static void compileFunction(Node *node) {
-  function(node->as.function.body, node->as.function.name);
+  function(node, node->as.function.name);
 
   defineVariable(&node->as.function.name);
 }
@@ -306,7 +311,13 @@ static void compileFunction(Node *node) {
 static void compileCall(Node *node) {
   compileNode(node->as.call.callee);
 
-  uint8_t argCount = 0; // TODO:
+  // Compile parameters.
+  for (int i = 0; i < node->as.call.arity; i++) {
+    Node arg = node->as.call.args[i];
+    compileNode(&arg);
+  }
+
+  uint8_t argCount = node->as.call.arity;
   emitBytes(OP_CALL, argCount);
 }
 

@@ -49,19 +49,25 @@ Node *newLetGet(Identifier ident) {
   return node;
 }
 
-Node *newFunctionNode(Identifier name, Args *args, Node *body) {
+Node *newFunctionNode(Identifier name, Identifier *args, int arity, Node *body) {
   Node *node = malloc(sizeof(Node));
   node->type = NODE_FUNCTION;
   node->as.function.name = name;
+
+  // TODO: if args size > MAX_ARG_COUNT -> error.
+
   node->as.function.args = args;
+  node->as.function.arity = arity;
   node->as.function.body = body;
   return node;
 }
 
-Node *newCall(Node *callee) {
+Node *newCall(Node *callee, Node *args, int arity) {
   Node *node = malloc(sizeof(Node));
   node->type = NODE_CALL;
   node->as.call.callee = callee;
+  node->as.call.args = args;
+  node->as.call.arity = arity;
   return node;
 }
 

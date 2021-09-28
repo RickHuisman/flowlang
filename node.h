@@ -1,6 +1,9 @@
 #ifndef node_h
 #define node_h
 
+// TODO: Move.
+#define MAX_ARG_COUNT 8
+
 typedef enum {
   UNARY_NEGATE,
   UNARY_NOT,
@@ -39,7 +42,6 @@ typedef enum {
 } NodeType;
 
 typedef struct ModuleAst ModuleAst;
-typedef struct Args Args;
 
 typedef struct Expr {
   NodeType type;
@@ -74,13 +76,15 @@ typedef struct Expr {
 
     struct {
       Identifier name;
-      Args *args;
+      Identifier *args;
+      int arity;
       struct Expr *body;
     } function;
 
     struct {
       struct Expr *callee;
-      // TODO: args.
+      struct Expr *args;
+      int arity;
     } call;
 
     struct {
@@ -105,12 +109,6 @@ typedef struct ModuleAst {
   struct ModuleAst *next;
 } ModuleAst;
 
-typedef struct Args {
-  Identifier *node;
-  struct Args *next;
-  int count;
-} Args;
-
 Identifier newIdent(const char *start, int length);
 
 Node *newUnary(UnaryOperator op, Node *left);
@@ -123,9 +121,9 @@ Node *newLetSet(Identifier ident, Node *expr);
 
 Node *newLetGet(Identifier ident);
 
-Node *newFunctionNode(Identifier name, Args *args, Node *body);
+Node *newFunctionNode(Identifier name, Identifier *args, int arity, Node *body);
 
-Node *newCall(Node *callee);
+Node *newCall(Node *callee, Node *args, int arity);
 
 Node *newBlock(ModuleAst *ast);
 
